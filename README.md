@@ -1,2 +1,2 @@
 # hack-14d000d9-team
-Hackathon team repository for хюмандар
+Hackathon team repository for Human
