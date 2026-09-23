@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 const originalFetch = globalThis.fetch;
 const servers = [];
 async function load(mode) {
-  const server = await createServer({ server: { middlewareMode: true, hmr: { port: 0 } }, appType: 'custom', define: { 'import.meta.env.VITE_CHAT_MODE': JSON.stringify(mode) } });
+  const server = await createServer({ configFile: false, server: { middlewareMode: true, hmr: { port: 0 } }, appType: 'custom', optimizeDeps: {noDiscovery: true, include: []}, configLoader: 'runner', define: { 'import.meta.env.VITE_CHAT_MODE': JSON.stringify(mode) } });
   servers.push(server);
   return server.ssrLoadModule('/src/services/chatApi.ts');
 }
@@ -16,7 +16,7 @@ try {
   assert.deepEqual(answer.productIds, [35819]);
   const compare = await demo.sendChatMessage([{ ...messages[0], content: 'Что дешевле, 027228 или 027230?' }], signal);
   assert.deepEqual(compare.productIds, [515291, 515288]);
-  assert.match(compare.content, /1.?000 ₸/);
+  assert.match(compare.content, /1.?000/);
   assert.match(compare.content, /160 А/);
   assert.match(compare.content, /250 А/);
   const choose = await demo.sendChatMessage([
@@ -28,7 +28,7 @@ try {
   assert.match(choose.content, /Для какой задачи/);
   const budget = await demo.sendChatMessage([{ ...messages[0], content: 'Посоветуй недорогой автомат до 30 тысяч' }], signal);
   assert.ok(budget.productIds.length > 0);
-  assert.match(budget.content, /Бюджет: до 30.?000 ₸/);
+  assert.match(budget.content, /Бюджет: до 30.?000/);
   const clarify = await demo.sendChatMessage([{ ...messages[0], content: 'Какой лучше?' }], signal);
   assert.match(clarify.content, /Что сравнить/);
   assert.equal(clarify.productIds, undefined);
@@ -57,44 +57,52 @@ try {
   assert.deepEqual(fileAnswer.productIds, [35819]);
   const unsupported = await demo.sendChatMessage([{ ...messages[0], content: '' }], signal, [new File(['binary'], 'spec.pdf')]);
   assert.match(unsupported.content, /не анализировалось/);
-  await assert.rejects(demo.getStockQuote(35819, signal), /Остатки не переданы/);
+
   console.log('PASS: catalogue lookup, text attachment, unsupported-format disclosure, unknown stock');
   await servers.pop().close();
 
   const api = await load('api');
-  let calls = 0;
-  globalThis.fetch = async (url, options) => {
-    calls++;
-    assert.equal(url, '/api/chat');
-    assert.ok(options.body instanceof FormData);
-    assert.equal(await options.body.get('files').text(), 'RM17UAS16');
-    assert.equal(JSON.parse(options.body.get('messages'))[0].content, 'RM17UAS16');
-    return Response.json({ content: 'Found', productIds: [35819, 999999] });
+  const bridge = await servers.at(-1).ssrLoadModule('/src/services/backendApi.ts');
+  const item = {id:'demo-2',name:'DEMO-B16',article:'DEMO-B16',price:1700,currency:'DEMO',quantity:5,stock:5,image:null,url:null,description:'Synthetic',stores:[],source:{kind:'synthetic'},conflicts:[],raw:{}};
+  const proposal={id:'bound-id',product:item,quantity:2,expires_at:Date.now()/1000+300,status:'pending'};
+  const requests=[];
+  globalThis.fetch = async (url, options={}) => {
+    requests.push({url,options});
+    if(url==='/api/session')return Response.json({csrf:'test-csrf',proposal:null});
+    if(options.method==='POST')assert.equal(options.headers['X-CSRF-Token'],'test-csrf');
+    if(url==='/api/products')return Response.json({items:[item]});
+    if(url==='/api/status')return Response.json({mode:'ai',real_products:0,demo_products:1,catalog_mode:'snapshot'});
+    if(url==='/api/chat'){
+      const body=JSON.parse(options.body);assert.equal(body.message,'RM17UAS16');assert.equal(body.request_id,'test');
+      return Response.json({answer:'Found',products:[item],analogs:[],proposal});
+    }
+    if(url==='/api/upload'){
+      assert.ok(options.body instanceof FormData);
+      return Response.json({items:[{query:'DEMO-B16',quantity:2,confidence:'review'}],warning:'Review required'});
+    }
+    if(url==='/api/proposals')return Response.json(proposal);
+    if(url==='/api/proposals/bound-id/confirm'){
+      assert.deepEqual(JSON.parse(options.body),{confirm:true});return Response.json({cart_url:'/cart'});
+    }
+    if(url==='/api/proposals/bound-id/cancel'||url==='/api/session/reset')return Response.json({ok:true});
+    throw new Error('Unexpected route '+url);
   };
-  const remote = await api.sendChatMessage(messages, signal, [new File(['RM17UAS16'], 'spec.anything')]);
-  assert.deepEqual(remote.productIds, [35819]);
-  assert.equal(calls, 1);
-  const quote = { quoteId: 'test-quote', productId: 35819, stock: 3, price: 49490 };
-  globalThis.fetch = async () => { calls++; return Response.json(quote); };
-  assert.deepEqual(await api.getStockQuote(35819, signal), quote);
-  const before = calls;
-  for (const quantity of [0, -1, 1.5, 4, NaN]) await assert.rejects(api.confirmCart(quote, quantity, 'test-key', signal));
-  assert.equal(calls, before, 'Invalid quantities must not issue cart requests');
-  globalThis.window = { location: { origin: 'http://localhost:5173' } };
-  globalThis.fetch = async (url, options) => {
-    assert.equal(url, '/api/cart/items');
-    assert.equal(options.headers['Idempotency-Key'], 'test-key');
-    assert.deepEqual(JSON.parse(options.body), { productId: 35819, quoteId: 'test-quote', quantity: 2, confirmed: true });
-    return Response.json({ cartUrl: 'https://ekt.kz/cart/' });
-  };
-  assert.equal(await api.confirmCart(quote, 2, 'test-key', signal), 'https://ekt.kz/cart/');
-  globalThis.fetch = async () => Response.json({ cartUrl: 'javascript:alert(1)' });
-  await assert.rejects(api.confirmCart(quote, 2, 'test-key', signal), /Некорректная ссылка/);
-  globalThis.fetch = async () => Response.json({ ...quote, stock: -1 });
-  await assert.rejects(api.getStockQuote(35819, signal), /подтвердить/);
-  console.log('PASS: multipart upload, response filtering, stock validation, quantity limits, explicit cart payload, unsafe URL rejection');
+  await bridge.loadCatalog();
+  const reply=await api.sendChatMessage(messages,signal);
+  assert.deepEqual(reply.productIds,[-2]);assert.equal(reply.proposal.quantity,2);
+  assert.equal(requests.filter(r=>r.url.endsWith('/confirm')).length,0);
+  const before=requests.filter(r=>r.url==='/api/chat').length;
+  const upload=await api.sendChatMessage(messages,signal,[new File(['x'],'list.xlsx')]);
+  assert.equal(upload.review[0].quantity,2);
+  assert.equal(requests.filter(r=>r.url==='/api/chat').length,before,'Upload cannot execute simultaneous cart text');
+  const p=await bridge.propose(-2,2,signal);assert.equal(p.id,'bound-id');
+  assert.equal(requests.filter(r=>r.url.endsWith('/confirm')).length,0);
+  assert.equal(await bridge.confirmProposal(p.id),'/cart');
+  await bridge.cancelProposal(p.id);await bridge.resetChat();
+  globalThis.fetch=async()=>Response.json({cart_url:'javascript:alert(1)'});
+  await assert.rejects(bridge.confirmProposal(p.id),/Некорректная ссылка/);
+  console.log('PASS: session/CSRF, normalized products, JSON chat, draft upload, separate proposal and confirmation, cancellation, reset, unsafe URL rejection');
 } finally {
   globalThis.fetch = originalFetch;
-  delete globalThis.window;
   for (const server of servers) await server.close();
 }

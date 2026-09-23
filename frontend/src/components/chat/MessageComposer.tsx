@@ -12,9 +12,10 @@ export function MessageComposer({ isLoading, onSend }: Props) {
     const next = [...files];
     const errors: string[] = [];
     for (const file of incoming) {
-      if (file.size > 25 * 1024 * 1024) { errors.push(`${file.name}: больше 25 МБ`); continue; }
+      if (!/\.(xlsx|docx|pdf|jpe?g|png)$/i.test(file.name)) { errors.push(`${file.name}: поддерживаются XLSX, DOCX, PDF, JPEG и PNG`); continue; }
+      if (file.size > 5 * 1024 * 1024) { errors.push(`${file.name}: больше 5 МБ`); continue; }
       if (next.some((f) => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) continue;
-      if (next.length >= 10 || next.reduce((sum, f) => sum + f.size, 0) + file.size > 50 * 1024 * 1024) { errors.push('До 10 файлов, суммарно до 50 МБ'); break; }
+      if (next.length >= 3 || next.reduce((sum, f) => sum + f.size, 0) + file.size > 15 * 1024 * 1024) { errors.push('До 3 файлов, суммарно до 15 МБ'); break; }
       next.push(file);
     }
     setFiles(next); setError(errors.join('. '));
@@ -29,9 +30,9 @@ export function MessageComposer({ isLoading, onSend }: Props) {
     {files.length > 0 && <div className="attachments">{files.map((file, index) => <div className="attachment" key={`${file.name}-${file.lastModified}`}><File size={15} /><span title={file.name}>{file.name}<small>{Math.max(1, Math.round(file.size / 1024))} КБ</small></span><button type="button" className="icon-button" disabled={isLoading} title="Удалить файл" aria-label={`Удалить ${file.name}`} onClick={() => setFiles(files.filter((_, i) => i !== index))}><X size={14} /></button></div>)}</div>}
     {error && <p className="error" role="alert">{error}</p>}
     <textarea aria-label="Сообщение помощнику" placeholder="Что ищете? Какой товар сравнить или подобрать?" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={isLoading} rows={2} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} />
-    <div className="composer-tools"><input ref={input} type="file" multiple hidden onChange={(e) => { addFiles(Array.from(e.target.files || [])); e.target.value = ''; }} disabled={isLoading} />
-      <button type="button" className="icon-button" title="Прикрепить файлы любого формата" aria-label="Прикрепить файлы" disabled={isLoading} onClick={() => input.current?.click()}><Paperclip size={20} /></button>
-      <small>{files.length ? `${files.length} файлов` : 'До 25 МБ на файл'}</small>
+    <div className="composer-tools"><input ref={input} type="file" accept=".xlsx,.docx,.pdf,.jpg,.jpeg,.png" multiple hidden onChange={(e) => { addFiles(Array.from(e.target.files || [])); e.target.value = ''; }} disabled={isLoading} />
+      <button type="button" className="icon-button" title="Прикрепить XLSX, DOCX, PDF, JPEG или PNG" aria-label="Прикрепить файлы" disabled={isLoading} onClick={() => input.current?.click()}><Paperclip size={20} /></button>
+      <small>{files.length ? `${files.length} файлов` : 'До 5 МБ на файл'}</small>
       <button className="send-button" type="submit" title="Отправить" aria-label="Отправить сообщение" disabled={isLoading || (!draft.trim() && !files.length)}>{isLoading ? <LoaderCircle size={19} className="spinner" /> : <ArrowUp size={20} />}</button>
     </div>
   </form>;

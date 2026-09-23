@@ -1,5 +1,6 @@
+import { resetChat } from '../services/backendApi';
 import { useEffect, useRef, useState } from 'react';
-import { sendChatMessage } from '../services/chatApi';
+import { apiEnabled, sendChatMessage } from '../services/chatApi';
 import type { Message } from '../types/chat';
 
 export function useChat() {
@@ -28,7 +29,7 @@ export function useChat() {
       const response = await sendChatMessage(next, controller.signal, files, contextProductId);
       if (controller.signal.aborted) return false;
       setMessages([...next, {
-        id: crypto.randomUUID(), role: 'assistant', content: response.content, productIds: response.productIds,
+        id: crypto.randomUUID(), role: 'assistant', content: response.content, productIds: response.productIds, proposal: response.proposal, review: response.review, cartUrl: response.cartUrl,
       }]);
       return true;
     } catch (cause) {
@@ -45,8 +46,11 @@ export function useChat() {
     }
   }
 
-  function reset() {
-    pending.current?.abort();
+  async function reset() {
+    if (pending.current) return;
+    setIsLoading(true);
+    try { if(apiEnabled) await resetChat(); }
+    catch(cause) { setError(cause instanceof Error ? cause.message : 'Не удалось сбросить диалог.'); setIsLoading(false); return; }
     pending.current = null;
     setMessages([]);
     setError(null);

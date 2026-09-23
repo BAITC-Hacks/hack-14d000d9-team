@@ -1,0 +1,29 @@
+{
+  "mode": "deterministic demo, HTTP loopback, persisted SQLite; no model calls",
+  "results": [
+    {
+      "query": "Покажи 027228",
+      "runs": 10,
+      "median_ms": 86.3,
+      "p95_ms": 89.93
+    },
+    {
+      "query": "Автомат 16 А",
+      "runs": 10,
+      "median_ms": 71.85,
+      "p95_ms": 100.46
+    },
+    {
+      "query": "DEMO-A16",
+      "runs": 10,
+      "median_ms": 70.41,
+      "p95_ms": 84.53
+    },
+    {
+      "query": "Условия доставки",
+      "runs": 10,
+      "median_ms": 69.86,
+      "p95_ms": 97.79
+    }
+  ]
+}

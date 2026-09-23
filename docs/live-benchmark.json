@@ -1,0 +1,10 @@
+{
+  "endpoint": "GET /api/products/detail?id=515291",
+  "runs_ms": [
+    391.78,
+    202.42,
+    201.36
+  ],
+  "median_ms": 202.42,
+  "note": "Read only; includes HTTPS client setup; no model call"
+}

@@ -1,23 +1,15 @@
-import type { ChatResponse, Message, StockQuote } from '../types/chat';
+import type { ChatResponse, Message } from '../types/chat';
 import { products, searchProducts, money, specifications } from './catalog';
 import { comparisonReply } from './comparison';
-
-export const apiEnabled = import.meta.env.VITE_CHAT_MODE === 'api';
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
-async function checkedJson(response: Response): Promise<unknown> {
-  if (!response.ok) throw new Error(`Сервис недоступен (${response.status}). Повторите попытку позже.`);
-  return response.json();
-}
+import { remoteReply, uploadFiles } from './backendApi';
+export const apiEnabled = import.meta.env.VITE_CHAT_MODE !== 'demo';
 export async function sendChatMessage(messages: Message[], signal: AbortSignal, files: File[] = [], contextProductId?: number): Promise<ChatResponse> {
   if (!apiEnabled) return localReply(messages, files, contextProductId);
-  const body = new FormData();
-  body.append('messages', JSON.stringify(messages));
-  if (contextProductId) body.append('productId', String(contextProductId));
-  files.forEach((file) => body.append('files', file, file.name));
-  const data = await checkedJson(await fetch(`${baseUrl}/chat`, { method: 'POST', body, signal }));
-  if (typeof data !== 'object' || !data || !('content' in data) || typeof data.content !== 'string') throw new Error('Сервис вернул некорректный ответ.');
-  const ids = 'productIds' in data && Array.isArray(data.productIds) ? data.productIds.filter((id): id is number => typeof id === 'number' && products.some((p) => p.id === id)) : [];
-  return { content: data.content, productIds: ids };
+  const last = messages.at(-1);
+  if (!last) throw new Error('Введите сообщение.');
+  // Uploads only create a review draft, never execute a simultaneous cart request.
+  if (files.length) return uploadFiles(files,signal);
+  return remoteReply(last.content,last.id,signal,contextProductId);
 }
 async function localReply(messages: Message[], files: File[], contextProductId?: number): Promise<ChatResponse> {
   const query = messages.at(-1)?.content || '';
@@ -43,21 +35,4 @@ async function localReply(messages: Message[], files: File[], contextProductId?:
     return { content: fileNote + `${product.name}\n\nПо предоставленной выгрузке: ${money(product.price)}, общий остаток ${product.quantity} шт.\n\n${specifications(product).map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n${product.dataWarning}\n\nОстатки по складам:\n${stores}\n\nСертификат не предоставлен. Цена и наличие относятся к снимку данных; перед покупкой нужна актуализация.`, productIds: [product.id] };
   }
   return { content: fileNote + (followup ? 'В выгрузке есть название, артикул и цена. Полные характеристики, сертификаты и остатки не переданы. ' : `Найдено в выгрузке: ${found.length}. `) + 'Цены ниже взяты из предоставленных данных и требуют актуализации. Наличие нужно уточнить. Полная карточка доступна по ссылке на ekt.kz.', productIds: found.slice(0, 4).map((p) => p.id) };
-}
-export async function getStockQuote(productId: number, signal: AbortSignal): Promise<StockQuote> {
-  if (!apiEnabled) {
-    const product = products.find((item) => item.id === productId);
-    throw new Error((product?.quantity !== undefined ? `По выгрузке: ${product.quantity} шт. Для покупки нужно подтвердить актуальные остатки. ` : 'Остатки не переданы. ') + 'Подключение к корзине ekt.kz пока не настроено; товар не добавлен.');
-  }
-  const quote = await checkedJson(await fetch(`${baseUrl}/products/${productId}/quote`, { signal })) as StockQuote;
-  if (!quote || typeof quote.quoteId !== 'string' || !quote.quoteId || quote.productId !== productId || !Number.isInteger(quote.stock) || quote.stock < 0 || !Number.isFinite(quote.price) || quote.price < 0) throw new Error('Не удалось подтвердить цену и наличие.');
-  return quote;
-}
-export async function confirmCart(quote: StockQuote, quantity: number, requestId: string, signal: AbortSignal): Promise<string> {
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > quote.stock) throw new Error('Количество превышает доступный остаток.');
-  const data = await checkedJson(await fetch(`${baseUrl}/cart/items`, { method: 'POST', signal, headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestId }, body: JSON.stringify({ productId: quote.productId, quoteId: quote.quoteId, quantity, confirmed: true }) }));
-  if (!data || typeof data !== 'object' || !('cartUrl' in data) || typeof data.cartUrl !== 'string') throw new Error('Сервис не вернул ссылку на корзину.');
-  const url = new URL(data.cartUrl, window.location.origin);
-  if (!['http:', 'https:'].includes(url.protocol) || (url.origin !== window.location.origin && url.hostname !== 'ekt.kz' && url.hostname !== 'www.ekt.kz')) throw new Error('Некорректная ссылка на корзину.');
-  return url.href;
 }

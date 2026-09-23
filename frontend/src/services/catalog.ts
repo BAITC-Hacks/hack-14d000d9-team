@@ -4,20 +4,20 @@ import detailedProduct from '../data/product-515291.json';
 import type { Product } from '../types/chat';
 
 export const products: Product[] = [...page1.items, ...page2.items].map((product) => product.id === detailedProduct.id ? {
-  ...product, ...detailedProduct,
+  ...product, ...detailedProduct, currency: 'KZT',
   dataWarning: 'Номинальный ток требует уточнения: в названии и описании — 160 А, в поле NOMINALNYY_TOK — 250 А. Не используйте эти данные для подбора защиты без проверки у поставщика.',
-} : product);
+} : {...product, currency: 'KZT'});
 
 export function specifications(product: Product): [string, string][] {
   const fields = [
     ['TORGOVAYA_MARKA', 'Производитель'], ['ARTIKULPOSTAVSHCHIKA', 'Артикул производителя'],
     ['KOLICHESTVO_POLYUSOV', 'Количество полюсов'], ['NOMINALNOE_NAPRYAZHENIE', 'Напряжение'],
     ['NOMINALNAYA_OTKLYUCHAYUSHCHAYA_SPOSOBNOST', 'Отключающая способность'],
-    ['TIP_USTANOVKI', 'Монтаж'], ['KRATNOST_MIN', 'Минимальная кратность'],
+    ['TIP_USTANOVKI', 'Монтаж'],
   ];
   return fields.flatMap(([key, label]) => typeof product.properties?.[key] === 'string' ? [[label, product.properties[key] as string] as [string, string]] : []);
 }
-export const money = (value: number) => `${new Intl.NumberFormat('ru-KZ').format(value)} ₸`;
+export const money = (value: number, currency?: string | null) => Number.isFinite(value) ? `${new Intl.NumberFormat('ru-RU').format(value)} ${!currency || currency === 'KZT' ? '₸' : currency}` : 'Цена неизвестна';
 export const normalize = (text: string) => text.toLowerCase().replace(/ё/g, 'е');
 export function category(product: Product) {
   if (/реле/i.test(product.name)) return 'Реле контроля';
