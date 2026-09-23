@@ -1,0 +1,14 @@
+{
+  "source_mode": "mock",
+  "checks_passed": 6,
+  "checks": [
+    "GET /health: 200, mock, upstream not checked",
+    "GET /api/products/515291: 200, decimal money, conflict warning, source header",
+    "Unknown mock product: 404 PRODUCT_NOT_FOUND",
+    "Invalid ID: 422 INVALID_PRODUCT_ID",
+    "OpenAPI exposes exactly the two Phase 1 application endpoints",
+    "Interactive API documentation: 200"
+  ],
+  "server_exit_code": -15,
+  "application_shutdown_complete": true
+}

@@ -1,0 +1,9 @@
+# Exact direct-dependency versions available in the verification environment.
+# Tests use httpx.MockTransport + injected fakes; respx is not required.
+fastapi==0.128.2
+uvicorn==0.48.0
+httpx==0.28.1
+pydantic==2.13.4
+pydantic-settings==2.14.1
+pytest==9.0.2
+pytest-asyncio==1.3.0

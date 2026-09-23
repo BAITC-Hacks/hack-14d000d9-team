@@ -1,0 +1,63 @@
+{
+  "id": 515291,
+  "name": "027228 АВ DRX250 MT 3ф 160А 18ka Legrand (1)",
+  "article": "200300285_",
+  "description": "Автоматический выключатель DRX250 MT 3P 160А 18kA...",
+  "price": 64920,
+  "quantity": 23,
+  "stores": [
+    {
+      "id": 3,
+      "name": "Шымкент (ул.Байдукова)",
+      "quantity": 2
+    },
+    {
+      "id": 13,
+      "name": "Алматы",
+      "quantity": 5
+    },
+    {
+      "id": 19,
+      "name": "Тараз",
+      "quantity": 2
+    },
+    {
+      "id": 20,
+      "name": "Атырау",
+      "quantity": 3
+    },
+    {
+      "id": 21,
+      "name": "Караганда",
+      "quantity": 2
+    },
+    {
+      "id": 24,
+      "name": "Нур-Султан",
+      "quantity": 8
+    },
+    {
+      "id": 25,
+      "name": "Шымкент (Тассай)",
+      "quantity": 1
+    }
+  ],
+  "offers": [],
+  "properties": {
+    "CML2_ARTICLE": "200300285_",
+    "ARTIKULPOSTAVSHCHIKA": "027228",
+    "OBYEM": "Автоматический выключатель",
+    "KOLICHESTVO_POLYUSOV": "3",
+    "NOMINALNAYA_OTKLYUCHAYUSHCHAYA_SPOSOBNOST": "18кА",
+    "NOMINALNOE_NAPRYAZHENIE": "400В",
+    "NOMINALNYY_TOK": "250 А",
+    "TIP_USTANOVKI": "Винтовое",
+    "TORGOVAYA_MARKA": "Legrand",
+    "KRATNOST_MIN": "1",
+    "RECOMMEND": [
+      "48783",
+      "23466",
+      "28727"
+    ]
+  }
+}
