@@ -1,0 +1,77 @@
+[
+  {
+    "id": "demo-1",
+    "article": "DEMO-A16",
+    "name": "ДЕМО · Автомат DEMO-A16 16 А",
+    "_category": "mcb",
+    "price": 1500,
+    "currency": "DEMO",
+    "quantity": 0,
+    "stores": [
+      {
+        "id": "demo-store",
+        "name": "Синтетический торговый склад",
+        "quantity": 0
+      }
+    ],
+    "properties": {
+      "NOMINALNYY_TOK": "16 А",
+      "KOLICHESTVO_POLYUSOV": "1",
+      "NOMINALNOE_NAPRYAZHENIE": "230 В",
+      "NOMINALNAYA_OTKLYUCHAYUSHCHAYA_SPOSOBNOST": "6 кА",
+      "CURVE": "C",
+      "TIP_USTANOVKI": "DIN",
+      "TORGOVAYA_MARKA": "DEMO"
+    }
+  },
+  {
+    "id": "demo-2",
+    "article": "DEMO-B16",
+    "name": "ДЕМО · Автомат DEMO-B16 16 А",
+    "_category": "mcb",
+    "price": 1700,
+    "currency": "DEMO",
+    "quantity": 5,
+    "stores": [
+      {
+        "id": "demo-store",
+        "name": "Синтетический торговый склад",
+        "quantity": 5
+      }
+    ],
+    "properties": {
+      "NOMINALNYY_TOK": "16 А",
+      "KOLICHESTVO_POLYUSOV": "1",
+      "NOMINALNOE_NAPRYAZHENIE": "230 В",
+      "NOMINALNAYA_OTKLYUCHAYUSHCHAYA_SPOSOBNOST": "6 кА",
+      "CURVE": "C",
+      "TIP_USTANOVKI": "DIN",
+      "TORGOVAYA_MARKA": "DEMO"
+    }
+  },
+  {
+    "id": "demo-3",
+    "article": "DEMO-B32",
+    "name": "ДЕМО · Автомат DEMO-B32 32 А",
+    "_category": "mcb",
+    "price": 1900,
+    "currency": "DEMO",
+    "quantity": 7,
+    "stores": [
+      {
+        "id": "demo-store",
+        "name": "Синтетический торговый склад",
+        "quantity": 7
+      }
+    ],
+    "properties": {
+      "NOMINALNYY_TOK": "32 А",
+      "KOLICHESTVO_POLYUSOV": "1",
+      "NOMINALNOE_NAPRYAZHENIE": "230 В",
+      "NOMINALNAYA_OTKLYUCHAYUSHCHAYA_SPOSOBNOST": "6 кА",
+      "CURVE": "C",
+      "TIP_USTANOVKI": "DIN",
+      "TORGOVAYA_MARKA": "DEMO"
+    }
+  }
+]
